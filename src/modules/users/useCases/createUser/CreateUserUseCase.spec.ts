@@ -1,54 +1,38 @@
-import "reflect-metadata";
-
-import { AppError } from "../../../../shared/errors/AppError";
-
-import { CreateUserUseCase } from "./CreateUserUseCase";
-import { InMemoryUsersRepository } from "../../repositories/in-memory/InMemoryUsersRepository";
+import { CreateUserUseCase } from './CreateUserUseCase';
+import { IUsersRepository } from '../../repositories/IUsersRepository';
+import { InMemoryUsersRepository } from '../../repositories/in-memory/InMemoryUsersRepository';
+import { CreateUserError } from "./CreateUserError";
 
 let createUserUseCase: CreateUserUseCase;
-let inMemoryUsersRepository: InMemoryUsersRepository;
+let usersRepository: IUsersRepository;
 
-describe("Create user test", () => {
-  beforeEach(async () => {
-    inMemoryUsersRepository = new InMemoryUsersRepository();
-    createUserUseCase = new CreateUserUseCase(inMemoryUsersRepository);
+describe('Create User', () => {
+  beforeEach(() => {
+    usersRepository = new InMemoryUsersRepository();
+    createUserUseCase = new CreateUserUseCase(usersRepository);
   });
 
-  it("Should be able to create a new user", async () => {
-    let newUser = {
-      name: "test sample",
-      email: "test@example.com",
-      password: "test",
-    };
-    await createUserUseCase.execute({
-      name: newUser.name,
-      email: newUser.email,
-      password: newUser.password,
+  it('should be able to create a new user', async () => {
+    const user = await createUserUseCase.execute({
+      name: 'john',
+      email: 'john@mailinator.com',
+      password: '123123'
     });
 
-    const userCreated = await inMemoryUsersRepository.findByEmail(
-      newUser.email
-    );
-    expect(userCreated).toHaveProperty("id");
+    expect(user).toHaveProperty('id');
   });
 
-  it("Should not be able to create a new user with an existing email", async () => {
-    expect(async () => {
-      let newUser = {
-        name: "test sample",
-        email: "test@example.com",
-        password: "test",
-      };
-      await createUserUseCase.execute({
-        name: newUser.name,
-        email: newUser.email,
-        password: newUser.password,
-      });
-      await createUserUseCase.execute({
-        name: newUser.name,
-        email: newUser.email,
-        password: newUser.password,
-      });
-    }).rejects.toBeInstanceOf(AppError);
+  it('should not be able to create a new user with existent email', async () => {
+    await createUserUseCase.execute({
+      name: 'john',
+      email: 'john@mailinator.com',
+      password: '123123'
+    });
+
+    await expect(createUserUseCase.execute({
+      name: 'john',
+      email: 'john@mailinator.com',
+      password: '123123'
+    })).rejects.toBeInstanceOf(CreateUserError);
   });
 });
